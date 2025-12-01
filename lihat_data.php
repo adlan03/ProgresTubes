@@ -7,45 +7,20 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/family_service.php';
 
-// pastikan koneksi tersedia
-if (!isset($mysqli) || !$mysqli instanceof mysqli) {
-    die("Koneksi database tidak terbentuk. Pastikan config.php sudah benar.");
-}
+require_login();
+
+$infoMessage = 'Data tidak tersedia karena koneksi database dinonaktifkan.';
 
 /* load setting */
 $setting = fetch_settings($mysqli);
 
-/* HAPUS keluarga */
-if (isset($_POST['hapus_index'])) {
-    $id = intval($_POST['hapus_index']);
-    // foreign key dengan ON DELETE CASCADE akan hapus members otomatis
-    delete_family($mysqli, $id);
-    header("Location: index.php?page=lihat_data");
-    exit;
+/* tindakan POST hanya menampilkan pesan agar tidak error */
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $infoMessage = 'Perubahan tidak disimpan karena fitur basis data dimatikan.';
 }
 
-/* RESET semua */
-if (isset($_POST['reset_semua'])) {
-    reset_all_families($mysqli);
-    header("Location: index.php?page=lihat_data");
-    exit;
-}
-
-/* UPDATE keluarga (edit) */
-if (isset($_POST['update_index'])) {
-    $fid = intval($_POST['update_index']);
-    $infaq = isset($_POST['infaq']) ? INFAQ_VALUE : 0;
-
-    $members = collect_members_from_post($_POST);
-    replace_family($mysqli, $fid, $infaq, $members);
-
-    header("Location: index.php?page=lihat_data");
-    exit;
-}
-
-/* fetch data */
+/* fetch data dummy */
 $data = fetch_all_families($mysqli);
-
 $overallTotals = calculate_overall_totals($data, $setting);
 ?>
 <!doctype html>
@@ -70,6 +45,10 @@ $overallTotals = calculate_overall_totals($data, $setting);
 
         <section class="main">
             <h2>Data Keluarga Tersimpan</h2>
+
+            <div class="card" style="background:#e9ecef;border:1px solid #ced4da;color:#495057;">
+                <?= htmlspecialchars($infoMessage); ?>
+            </div>
 
             <?php if (empty($data)): ?>
                 <p>Belum ada data.</p>
@@ -109,9 +88,8 @@ $overallTotals = calculate_overall_totals($data, $setting);
 
                             <div class="row">
                                 <label><input type="checkbox" name="infaq" <?= (!empty($family['infaq']) ? "checked" : "") ?>> Infaq (Rp 15.000)</label>
-                                <button type="submit">Simpan Perubahan</button>
+                                <button type="submit" disabled>Simpan Perubahan</button>
                             </div>
-
 
 
                         </form>
@@ -126,7 +104,7 @@ $overallTotals = calculate_overall_totals($data, $setting);
 
                         <form method="post" onsubmit="return confirm('Hapus keluarga ini?')">
                             <input type="hidden" name="hapus_index" value="<?= intval($family['id']) ?>">
-                            <button type="submit" class="danger">Hapus Keluarga</button>
+                            <button type="submit" class="danger" disabled>Hapus Keluarga</button>
                         </form>
                     </div>
                 <?php endforeach; ?>
@@ -139,10 +117,10 @@ $overallTotals = calculate_overall_totals($data, $setting);
                         <p>Total Infaq: Rp <?= format_rupiah((float)$overallTotals['infaq']) ?></p>
 
                     <form method="post" onsubmit="return confirm('Reset semua data?')">
-                        <button type="submit" name="reset_semua" class="danger">🔄 Reset Semua Data</button>
+                        <button type="submit" name="reset_semua" class="danger" disabled>🔄 Reset Semua Data</button>
                         <div class="row" style="margin:12px 0;">
-                            <a class="button" href="index.php?page=export_excel&type=summary">⬇️ Export Ringkas (CSV)</a>
-                            <a class="button" href="index.php?page=export_excel&type=detail">⬇️ Export Detail (CSV)</a>
+                            <span class="button" style="pointer-events:none;opacity:0.6;">⬇️ Export Ringkas (Nonaktif)</span>
+                            <span class="button" style="pointer-events:none;opacity:0.6;">⬇️ Export Detail (Nonaktif)</span>
                       </div>
                     </form>
 
