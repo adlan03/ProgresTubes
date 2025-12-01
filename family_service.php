@@ -5,34 +5,22 @@ require_once __DIR__ . '/helpers.php';
 
 /**
  * Kumpulan fungsi layanan untuk operasi keluarga dan pengaturan.
+ * Semua fungsi dibuat no-op agar aplikasi tetap bisa berjalan tanpa database.
  */
 
-function is_settings_locked(mysqli $db): bool
+function is_settings_locked($db = null): bool
 {
-    $res = $db->query("SELECT locked FROM settings WHERE id=1");
-    if (!$res) {
-        return false;
-    }
-
-    $row = $res->fetch_assoc();
-    return isset($row['locked']) && (int)$row['locked'] === 1;
+    return false;
 }
 
-function update_settings(mysqli $db, int $harga, float $beras, float $jagung): void
+function update_settings($db = null, int $harga = 0, float $beras = 0.0, float $jagung = 0.0): void
 {
-    $stmt = $db->prepare("UPDATE settings SET harga=?, beras=?, jagung=? WHERE id=1");
-    $stmt->bind_param("idd", $harga, $beras, $jagung);
-    $stmt->execute();
-    $stmt->close();
+    // fitur dinonaktifkan
 }
 
-function set_setting_lock(mysqli $db, bool $locked): void
+function set_setting_lock($db = null, bool $locked = false): void
 {
-    $stmt = $db->prepare("UPDATE settings SET locked=? WHERE id=1");
-    $lockVal = $locked ? 1 : 0;
-    $stmt->bind_param("i", $lockVal);
-    $stmt->execute();
-    $stmt->close();
+    // fitur dinonaktifkan
 }
 
 function collect_members_from_post(array $post): array
@@ -60,100 +48,44 @@ function collect_members_from_post(array $post): array
     return $members;
 }
 
-function insert_family(mysqli $db, string $kepala, int $infaq): int
+function insert_family($db = null, string $kepala = '', int $infaq = 0): int
 {
-    $stmt = $db->prepare("INSERT INTO families (kepala, infaq) VALUES (?, ?)");
-    $stmt->bind_param("si", $kepala, $infaq);
-    $stmt->execute();
-    $familyId = $stmt->insert_id;
-    $stmt->close();
-
-    return (int)$familyId;
+    return 0;
 }
 
-function insert_members(mysqli $db, int $familyId, array $members): void
+function insert_members($db = null, int $familyId = 0, array $members = []): void
 {
-    $stmt = $db->prepare(
-        "INSERT INTO members (family_id, nama, jk, uang, beras, jagung) VALUES (?, ?, ?, ?, ?, ?)"
-    );
-
-    foreach ($members as $member) {
-        $stmt->bind_param(
-            "issiii",
-            $familyId,
-            $member['nama'],
-            $member['jk'],
-            $member['uang'],
-            $member['beras'],
-            $member['jagung']
-        );
-        $stmt->execute();
-    }
-
-    $stmt->close();
+    // fitur dinonaktifkan
 }
 
-function save_family(mysqli $db, string $kepala, int $infaq, array $members): void
+function save_family($db = null, string $kepala = '', int $infaq = 0, array $members = []): void
 {
-    $familyId = insert_family($db, $kepala, $infaq);
-    insert_members($db, $familyId, $members);
+    // fitur dinonaktifkan
 }
 
-function fetch_family_members(mysqli $db, int $familyId): array
+function fetch_family_members($db = null, int $familyId = 0): array
 {
-    $members = [];
-    $memberResult = $db->query("SELECT * FROM members WHERE family_id = {$familyId} ORDER BY id ASC");
-    while ($memberResult && $member = $memberResult->fetch_assoc()) {
-        $members[] = $member;
-    }
-
-    return $members;
+    return [];
 }
 
-function fetch_all_families(mysqli $db): array
+function fetch_all_families($db = null): array
 {
-    $out = [];
-    $familyResult = $db->query("SELECT * FROM families ORDER BY id ASC");
-    if (!$familyResult) {
-        return $out;
-    }
-
-    while ($family = $familyResult->fetch_assoc()) {
-        $familyId = (int)$family['id'];
-        $family['anggota'] = fetch_family_members($db, $familyId);
-        $out[] = $family;
-    }
-
-    return $out;
+    return [];
 }
 
-function delete_family(mysqli $db, int $familyId): void
+function delete_family($db = null, int $familyId = 0): void
 {
-    $stmt = $db->prepare("DELETE FROM families WHERE id = ?");
-    $stmt->bind_param("i", $familyId);
-    $stmt->execute();
-    $stmt->close();
+    // fitur dinonaktifkan
 }
 
-function reset_all_families(mysqli $db): void
+function reset_all_families($db = null): void
 {
-    $db->query("DELETE FROM members");
-    $db->query("DELETE FROM families");
+    // fitur dinonaktifkan
 }
 
-function replace_family(mysqli $db, int $familyId, int $infaq, array $members): void
+function replace_family($db = null, int $familyId = 0, int $infaq = 0, array $members = []): void
 {
-    $stmt = $db->prepare("DELETE FROM members WHERE family_id = ?");
-    $stmt->bind_param("i", $familyId);
-    $stmt->execute();
-    $stmt->close();
-
-    insert_members($db, $familyId, $members);
-
-    $stmt = $db->prepare("UPDATE families SET infaq = ? WHERE id = ?");
-    $stmt->bind_param("ii", $infaq, $familyId);
-    $stmt->execute();
-    $stmt->close();
+    // fitur dinonaktifkan
 }
 
 function calculate_family_totals(array $family, array $setting): array
@@ -165,7 +97,7 @@ function calculate_family_totals(array $family, array $setting): array
         'infaq' => (int)($family['infaq'] ?? 0),
     ];
 
-    foreach ($family['anggota'] as $member) {
+    foreach ($family['anggota'] ?? [] as $member) {
         if (!empty($member['uang'])) {
             $totals['uang'] += setting_value($setting, 'harga');
         }

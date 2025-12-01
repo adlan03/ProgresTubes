@@ -10,100 +10,12 @@ require_once __DIR__ . '/family_service.php';
 
 require_login();
 
-/**
- * Simpan perubahan setting dengan validasi lock.
- */
-function handle_setting_update(mysqli $db): void
-{
-    if (is_settings_locked($db)) {
-        redirect_to('index.php', 'err=locked');
-    }
+$infoMessage = null;
 
-    $harga  = filter_var($_POST['harga'] ?? 0, FILTER_VALIDATE_INT);
-    $beras  = filter_var($_POST['beras'] ?? 0, FILTER_VALIDATE_FLOAT);
-    $jagung = filter_var($_POST['jagung'] ?? 0, FILTER_VALIDATE_FLOAT);
-
-    $harga = $harga !== false ? $harga : 0;
-    $beras = $beras !== false ? $beras : 0.0;
-    $jagung = $jagung !== false ? $jagung : 0.0;
-
-    update_settings($db, $harga, $beras, $jagung);
-
-    redirect_to('index.php', 'ok=setting');
+// Semua aksi tulis dinonaktifkan karena tidak ada database.
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $infoMessage = 'Fitur penyimpanan dinonaktifkan karena tidak ada database.';
 }
-
-/**
- * Kunci atau buka kunci setting.
- */
-function toggle_setting_lock(mysqli $db, bool $locked): void
-{
-    set_setting_lock($db, $locked);
-
-    redirect_to('index.php');
-}
-
-/**
- * Tentukan nama kepala keluarga dengan fallback otomatis.
- */
-function resolve_head_name(array $names, mysqli $db): string
-{
-    $candidate = trim($names[0] ?? '');
-    if ($candidate !== '') {
-        return $candidate;
-    }
-
-    $res = $db->query("SELECT COUNT(*) AS cnt FROM families");
-    $row = $res ? $res->fetch_assoc() : ['cnt' => 0];
-    $nextIndex = intval($row['cnt'] ?? 0) + 1;
-
-    return "Kepala Keluarga " . $nextIndex;
-}
-
-/**
- * Simpan data keluarga beserta anggota.
- */
-function handle_family_submission(mysqli $db): void
-{
-    $members = collect_members_from_post($_POST);
-    if (empty($members)) {
-        redirect_to('index.php', 'err=empty');
-    }
-
-    $kepala = resolve_head_name($_POST['nama'] ?? [], $db);
-    $infaq = isset($_POST['infaq']) ? INFAQ_VALUE : 0;
-
-    save_family($db, $kepala, $infaq, $members);
-
-    redirect_to('index.php', 'ok=saved');
-}
-
-/**
- * Dispatcher aksi POST agar kode utama lebih bersih.
- */
-function handle_post_request(mysqli $db): void
-{
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        return;
-    }
-
-    if (isset($_POST['save_setting'])) {
-        handle_setting_update($db);
-    }
-
-    if (isset($_POST['lock'])) {
-        toggle_setting_lock($db, true);
-    }
-
-    if (isset($_POST['unlock'])) {
-        toggle_setting_lock($db, false);
-    }
-
-    if (isset($_POST['simpan'])) {
-        handle_family_submission($db);
-    }
-}
-
-handle_post_request($mysqli);
 
 /* ----- load setting untuk UI & JS ----- */
 $setting = fetch_settings($mysqli);
@@ -113,7 +25,7 @@ $setting = fetch_settings($mysqli);
 
 <head>
     <meta charset="utf-8">
-    <title>Dashboard - Input Keluarga (MySQL)</title>
+    <title>Dashboard - Input Keluarga (Tanpa Database)</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/style.css">
 </head>
@@ -133,25 +45,29 @@ $setting = fetch_settings($mysqli);
         <section class="main">
             <h2>Input Data Keluarga</h2>
 
+            <?php if ($infoMessage): ?>
+                <div class="card" style="background:#fff3cd;border:1px solid #ffeeba;color:#856404;">
+                    <?= htmlspecialchars($infoMessage); ?>
+                </div>
+            <?php endif; ?>
+
+            <p class="muted">Database tidak terhubung. Form di bawah hanya untuk tampilan dan tidak akan menyimpan data.</p>
+
             <!-- setting -->
             <form method="post" class="card setting-form">
                 <h4>Harga & Barang (tetap)</h4>
                 <label>Harga Uang per anggota (Rp)
-                    <input type="number" name="harga" step="100" value="<?= htmlspecialchars((string)$setting['harga']) ?>" <?= $setting['locked'] ? 'readonly' : '' ?>>
+                    <input type="number" name="harga" step="100" value="<?= htmlspecialchars((string)$setting['harga']) ?>" readonly>
                 </label>
                 <label>Beras (kg per anggota)
-                    <input type="number" name="beras" step="0.1" value="<?= htmlspecialchars((string)$setting['beras']) ?>" <?= $setting['locked'] ? 'readonly' : '' ?>>
+                    <input type="number" name="beras" step="0.1" value="<?= htmlspecialchars((string)$setting['beras']) ?>" readonly>
                 </label>
                 <label>Jagung (kg per anggota)
-                    <input type="number" name="jagung" step="0.1" value="<?= htmlspecialchars((string)$setting['jagung']) ?>" <?= $setting['locked'] ? 'readonly' : '' ?>>
+                    <input type="number" name="jagung" step="0.1" value="<?= htmlspecialchars((string)$setting['jagung']) ?>" readonly>
                 </label>
                 <div class="row">
-                    <?php if (!$setting['locked']): ?>
-                        <button type="submit" name="save_setting">Simpan Setting</button>
-                        <button type="submit" name="lock">🔒 Kunci</button>
-                    <?php else: ?>
-                        <button type="submit" name="unlock">🔓 Buka Kunci</button>
-                    <?php endif; ?>
+                    <button type="submit" name="save_setting" disabled>Simpan Setting</button>
+                    <button type="submit" name="lock" disabled>🔒 Kunci</button>
                 </div>
             </form>
 
@@ -205,7 +121,7 @@ $setting = fetch_settings($mysqli);
                 </div>
 
                 <div class="row">
-                    <button type="submit" name="simpan">💾 Simpan Data (Satu Keluarga)</button>
+                    <button type="submit" name="simpan">💾 Simpan Data (Dinonaktifkan)</button>
                 </div>
             </form>
 

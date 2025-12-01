@@ -1,5 +1,5 @@
 <?php
-// config.php — koneksi database & setting global
+// config.php — konfigurasi sederhana tanpa database
 
 // ====== PATH & URL BASE ======
 if (!defined('BASE_PATH')) {
@@ -24,13 +24,7 @@ if (!defined('BASE_URL')) {
 }
 
 // ====== KONEKSI DATABASE ======
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db   = "db_infaq";
-
-$mysqli = new mysqli($host, $user, $pass, $db);
-if ($mysqli->connect_errno) {
-    die("Koneksi database gagal: " . $mysqli->connect_error);
-}
-$mysqli->set_charset('utf8mb4');
+// Aplikasi kini berjalan tanpa database. Variabel $mysqli diset ke null
+// agar file lain yang meng-include config tetap menemukan variabel ini
+// tanpa memanggil fungsi mysqli apa pun.
+$mysqli = null;

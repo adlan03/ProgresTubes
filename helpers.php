@@ -29,25 +29,10 @@ function require_login(): void
 }
 
 /**
- * Ambil setting global, fallback ke default bila tidak ada.
+ * Ambil setting global tanpa database (gunakan nilai default).
  */
-function fetch_settings(mysqli $db): array
+function fetch_settings($db = null): array
 {
-    $stmt = $db->prepare("SELECT harga, beras, jagung, locked FROM settings WHERE id = 1");
-    if ($stmt && $stmt->execute()) {
-        $result = $stmt->get_result();
-        if ($result) {
-            $row = $result->fetch_assoc();
-            $stmt->close();
-            if ($row) {
-                // pastikan angka dikonversi ke tipe numeric
-                $normalized = array_map(static fn($value) => is_numeric($value) ? $value + 0 : $value, $row);
-                return array_merge(DEFAULT_SETTINGS, $normalized);
-            }
-        }
-        $stmt->close();
-    }
-
     return DEFAULT_SETTINGS;
 }
 
