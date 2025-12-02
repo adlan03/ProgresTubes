@@ -4,17 +4,18 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/family_service.php';
 
-/* --- Ambil setting --- */
+/* --- Ambil setting & data dummy --- */
 $setting = fetch_settings($mysqli);
 $harga  = setting_value($setting, 'harga');
 $berasV = setting_value($setting, 'beras');
 $jagungV = setting_value($setting, 'jagung');
 
-// Tanpa database: gunakan data kosong tetapi pastikan tampilan tetap berjalan.
-$families = [];
-$aggregate = ['uang' => 0.0, 'beras' => 0.0, 'jagung' => 0.0, 'infaq' => 0.0];
-$totalFamilies = 0;
+// Versi tanpa database: gunakan data contoh agar tampilan tetap hidup.
+$families = fetch_all_families($mysqli);
+$aggregate = calculate_overall_totals($families, $setting);
+$totalFamilies = count($families);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -91,7 +92,7 @@ $totalFamilies = 0;
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
                     <div>
                         <h2 style="margin:0;">Data Infaq &amp; Zakat</h2>
-                        <p class="muted" style="margin:6px 0 0;">Database nonaktif, tabel menampilkan contoh kosong.</p>
+                        <p class="muted" style="margin:6px 0 0;">Database nonaktif, tabel menampilkan data simulasi.</p>
                     </div>
                     <?php if (!empty($_SESSION['username'])): ?>
                         <div style="color:#4c5b55;">Login sebagai <strong><?= htmlspecialchars($_SESSION['username']); ?></strong></div>
@@ -118,25 +119,19 @@ $totalFamilies = 0;
                             <?php else: ?>
                                 <?php foreach ($families as $row): ?>
                                     <?php
-                                    $jmlU = (int)($row['jml_uang'] ?? 0);
-                                    $jmlB = (int)($row['jml_beras'] ?? 0);
-                                    $jmlJ = (int)($row['jml_jagung'] ?? 0);
-                                    $infaq = (int)($row['infaq'] ?? 0);
-
-                                    $uangRp   = $jmlU * $harga;
-                                    $berasKg  = $jmlB * $berasV;
-                                    $jagungKg = $jmlJ * $jagungV;
+                                    $memberCount = count($row['anggota'] ?? []);
+                                    $familyTotals = calculate_family_totals($row, $setting);
                                     ?>
                                     <tr>
                                         <td>
-                                            <strong><?= htmlspecialchars($row['nama_kepala']); ?></strong><br>
-                                            <small>(+ <?= max(0, (int)$row['jumlah_anggota'] - 1); ?> anggota)</small>
+                                            <strong><?= htmlspecialchars($row['kepala']); ?></strong><br>
+                                            <small>(+ <?= max(0, $memberCount - 1); ?> anggota)</small>
                                         </td>
-                                        <td><?= (int)$row['jumlah_anggota']; ?></td>
-                                        <td><?= format_rupiah((float)$uangRp); ?></td>
-                                        <td><?= number_format((float)$berasKg, 1); ?></td>
-                                        <td><?= number_format((float)$jagungKg, 1); ?></td>
-                                        <td><?= format_rupiah((float)$infaq); ?></td>
+                                        <td><?= $memberCount; ?></td>
+                                        <td><?= format_rupiah((float)$familyTotals['uang']); ?></td>
+                                        <td><?= number_format((float)$familyTotals['beras'], 1); ?></td>
+                                        <td><?= number_format((float)$familyTotals['jagung'], 1); ?></td>
+                                        <td><?= format_rupiah((float)$familyTotals['infaq']); ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>

@@ -9,7 +9,7 @@ require_once __DIR__ . '/family_service.php';
 
 require_login();
 
-$infoMessage = 'Data tidak tersedia karena koneksi database dinonaktifkan.';
+$infoMessage = 'Menampilkan data simulasi karena koneksi database dinonaktifkan.';
 
 /* load setting */
 $setting = fetch_settings($mysqli);
