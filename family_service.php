@@ -5,8 +5,31 @@ require_once __DIR__ . '/helpers.php';
 
 /**
  * Kumpulan fungsi layanan untuk operasi keluarga dan pengaturan.
- * Semua fungsi dibuat no-op agar aplikasi tetap bisa berjalan tanpa database.
+ * Versi tanpa database: fungsi membaca dari data dummy dan seluruh operasi tulis diabaikan.
  */
+
+// Data contoh untuk menjaga tampilan tetap berfungsi tanpa basis data.
+const DUMMY_FAMILIES = [
+    [
+        'id' => 1,
+        'kepala' => 'Budi Santoso',
+        'infaq' => INFAQ_VALUE,
+        'anggota' => [
+            ['nama' => 'Budi Santoso', 'jk' => 'L', 'uang' => 1, 'beras' => 0, 'jagung' => 0],
+            ['nama' => 'Siti Aminah', 'jk' => 'P', 'uang' => 0, 'beras' => 1, 'jagung' => 0],
+            ['nama' => 'Rudi', 'jk' => 'L', 'uang' => 1, 'beras' => 0, 'jagung' => 1],
+        ],
+    ],
+    [
+        'id' => 2,
+        'kepala' => 'Andi Pratama',
+        'infaq' => 0,
+        'anggota' => [
+            ['nama' => 'Andi Pratama', 'jk' => 'L', 'uang' => 0, 'beras' => 1, 'jagung' => 0],
+            ['nama' => 'Dewi Lestari', 'jk' => 'P', 'uang' => 1, 'beras' => 0, 'jagung' => 0],
+        ],
+    ],
+];
 
 function is_settings_locked($db = null): bool
 {
@@ -15,12 +38,12 @@ function is_settings_locked($db = null): bool
 
 function update_settings($db = null, int $harga = 0, float $beras = 0.0, float $jagung = 0.0): void
 {
-    // fitur dinonaktifkan
+    // Versi tanpa database: tidak ada proses simpan.
 }
 
 function set_setting_lock($db = null, bool $locked = false): void
 {
-    // fitur dinonaktifkan
+    // Versi tanpa database: tidak ada proses simpan.
 }
 
 function collect_members_from_post(array $post): array
@@ -65,12 +88,19 @@ function save_family($db = null, string $kepala = '', int $infaq = 0, array $mem
 
 function fetch_family_members($db = null, int $familyId = 0): array
 {
+    foreach (DUMMY_FAMILIES as $family) {
+        if ((int)$family['id'] === (int)$familyId) {
+            return $family['anggota'];
+        }
+    }
+
     return [];
 }
 
 function fetch_all_families($db = null): array
 {
-    return [];
+    // Kembalikan data dummy sehingga halaman dapat menampilkan contoh isi tabel.
+    return DUMMY_FAMILIES;
 }
 
 function delete_family($db = null, int $familyId = 0): void
